@@ -4,7 +4,7 @@
 import openpyxl
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side, numbers
-from openpyxl.chart import PieChart, BarChart, Reference
+from openpyxl.chart import PieChart, BarChart, LineChart, Reference
 from openpyxl.utils import get_column_letter
 from openpyxl.formatting.rule import DataBarRule
 from copy import copy
@@ -82,95 +82,241 @@ def set_col_widths(ws, widths):
 def create_dashboard(wb):
     ws = wb.active
     ws.title = "ダッシュボード"
-    set_col_widths(ws, [3, 18, 15, 15, 15, 15, 3])
+    set_col_widths(ws, [2, 18, 16, 16, 16, 16, 16, 16, 2])
 
-    # Title
-    ws.merge_cells("B2:F2")
-    ws["B2"] = "📊 家計簿ダッシュボード（年間サマリー）"
-    ws["B2"].font = title_font
+    # Row heights for better spacing
+    ws.row_dimensions[1].height = 10
+    ws.row_dimensions[2].height = 30
+    ws.row_dimensions[3].height = 8
 
-    # Annual summary headers
-    row = 4
-    headers = ["項目", "予算", "実績", "差額", "達成率"]
-    for col, h in enumerate(headers, 2):
-        ws.cell(row=row, column=col, value=h)
-    style_header_row(ws, row, 6)
+    # ===== Title =====
+    ws.merge_cells("B2:H2")
+    ws["B2"] = "📊 家計簿ダッシュボード"
+    ws["B2"].font = Font(name="Arial", size=20, bold=True, color=COLORS["primary"])
+    ws["B2"].alignment = Alignment(vertical="center")
 
-    # Summary rows
-    summary_items = [
-        ("年間収入合計", "", "", "", ""),
-        ("年間支出合計", "", "", "", ""),
-        ("年間貯蓄額", "", "", "", ""),
+    # ===== KPI Cards Row =====
+    # 4 KPI cards: 年間収入, 年間支出, 年間貯蓄, 貯蓄率
+    kpi_row = 4
+    ws.row_dimensions[kpi_row].height = 18
+    ws.row_dimensions[kpi_row + 1].height = 30
+    ws.row_dimensions[kpi_row + 2].height = 14
+
+    kpi_configs = [
+        ("💰 年間収入", "income_bg", "B", "C"),
+        ("💸 年間支出", "expense_bg", "D", "E"),
+        ("🏦 年間貯蓄", "savings_bg", "F", "G"),
+        ("📈 貯蓄率", "light_bg", "H", "H"),
     ]
-    for i, (item, *vals) in enumerate(summary_items, 1):
-        r = row + i
-        ws.cell(row=r, column=2, value=item).font = subtitle_font
-        # Formulas referencing monthly sheets
-        if i == 1:  # Income
-            formula_parts = [f"'{m}'!E3" for m in MONTHS]
-            ws.cell(row=r, column=4, value=0)  # Placeholder
-            ws.cell(row=r, column=2).fill = income_fill
-        elif i == 2:  # Expense
-            ws.cell(row=r, column=4, value=0)
-            ws.cell(row=r, column=2).fill = expense_fill
-        else:  # Savings
-            ws.cell(row=r, column=4, value=0)
-            ws.cell(row=r, column=2).fill = savings_fill
-        for c in range(2, 7):
+
+    for i, (label, bg_key, col_start, col_end) in enumerate(kpi_configs):
+        col_num = 2 + i * 2 if i < 3 else 8
+        # Label row
+        cell = ws.cell(row=kpi_row, column=col_num, value=label)
+        cell.font = Font(name="Arial", size=9, color="666666")
+        cell.fill = PatternFill(start_color=COLORS[bg_key], end_color=COLORS[bg_key], fill_type="solid")
+        cell.alignment = Alignment(horizontal="center")
+        if i < 3:
+            ws.cell(row=kpi_row, column=col_num + 1).fill = PatternFill(
+                start_color=COLORS[bg_key], end_color=COLORS[bg_key], fill_type="solid")
+
+    # KPI value row
+    val_row = kpi_row + 1
+    # Income total
+    ws.merge_cells(f"B{val_row}:C{val_row}")
+    ws.cell(row=val_row, column=2, value=f"=SUM(C{kpi_row+6}:C{kpi_row+17})")
+    ws.cell(row=val_row, column=2).font = Font(name="Arial", size=16, bold=True, color=COLORS["success"])
+    ws.cell(row=val_row, column=2).number_format = '#,##0"円"'
+    ws.cell(row=val_row, column=2).alignment = Alignment(horizontal="center", vertical="center")
+    ws.cell(row=val_row, column=2).fill = income_fill
+    ws.cell(row=val_row, column=3).fill = income_fill
+
+    # Expense total
+    ws.merge_cells(f"D{val_row}:E{val_row}")
+    ws.cell(row=val_row, column=4, value=f"=SUM(D{kpi_row+6}:D{kpi_row+17})")
+    ws.cell(row=val_row, column=4).font = Font(name="Arial", size=16, bold=True, color=COLORS["danger"])
+    ws.cell(row=val_row, column=4).number_format = '#,##0"円"'
+    ws.cell(row=val_row, column=4).alignment = Alignment(horizontal="center", vertical="center")
+    ws.cell(row=val_row, column=4).fill = expense_fill
+    ws.cell(row=val_row, column=5).fill = expense_fill
+
+    # Savings total
+    ws.merge_cells(f"F{val_row}:G{val_row}")
+    ws.cell(row=val_row, column=6, value=f"=B{val_row}-D{val_row}")
+    ws.cell(row=val_row, column=6).font = Font(name="Arial", size=16, bold=True, color=COLORS["accent"])
+    ws.cell(row=val_row, column=6).number_format = '#,##0"円"'
+    ws.cell(row=val_row, column=6).alignment = Alignment(horizontal="center", vertical="center")
+    ws.cell(row=val_row, column=6).fill = savings_fill
+    ws.cell(row=val_row, column=7).fill = savings_fill
+
+    # Savings rate
+    ws.cell(row=val_row, column=8, value=f'=IF(B{val_row}=0,"--",F{val_row}/B{val_row})')
+    ws.cell(row=val_row, column=8).font = Font(name="Arial", size=16, bold=True, color=COLORS["primary"])
+    ws.cell(row=val_row, column=8).number_format = "0%"
+    ws.cell(row=val_row, column=8).alignment = Alignment(horizontal="center", vertical="center")
+    ws.cell(row=val_row, column=8).fill = light_fill
+
+    # Add borders to KPI cards
+    for r in range(kpi_row, val_row + 1):
+        for c in range(2, 9):
             ws.cell(row=r, column=c).border = thin_border
 
-    # Monthly breakdown
-    row = 10
-    ws.merge_cells(f"B{row}:F{row}")
-    ws[f"B{row}"] = "📅 月別サマリー"
-    ws[f"B{row}"].font = subtitle_font
+    # ===== Separator =====
+    sep_row = kpi_row + 3
+    ws.row_dimensions[sep_row].height = 8
 
-    row = 11
-    headers2 = ["月", "収入", "支出", "貯蓄", "貯蓄率"]
+    # ===== Section: Monthly Summary Table =====
+    section_row = kpi_row + 4
+    ws.merge_cells(f"B{section_row}:H{section_row}")
+    ws[f"B{section_row}"] = "📅 月別収支サマリー"
+    ws[f"B{section_row}"].font = Font(name="Arial", size=13, bold=True, color=COLORS["primary"])
+    ws.row_dimensions[section_row].height = 22
+
+    # Table headers
+    tbl_hdr_row = section_row + 1
+    headers2 = ["月", "収入", "支出", "貯蓄", "貯蓄率", "前月比支出", "評価"]
     for col, h in enumerate(headers2, 2):
-        ws.cell(row=row, column=col, value=h)
-    style_header_row(ws, row, 6)
+        ws.cell(row=tbl_hdr_row, column=col, value=h)
+    style_header_row(ws, tbl_hdr_row, 8)
 
+    # Monthly data rows
     for i, month in enumerate(MONTHS):
-        r = row + 1 + i
+        r = tbl_hdr_row + 1 + i
         ws.cell(row=r, column=2, value=month).border = thin_border
         ws.cell(row=r, column=2).alignment = Alignment(horizontal="center")
+        ws.cell(row=r, column=2).font = Font(name="Arial", size=10, bold=True)
         # Reference formulas to monthly sheets
         income_ref = f"'{month}'!E3"
-        expense_ref = f"'{month}'!E21"
+        expense_ref = f"'{month}'!E10"
         ws.cell(row=r, column=3).value = f"={income_ref}"
+        ws.cell(row=r, column=3).number_format = '#,##0"円"'
         ws.cell(row=r, column=4).value = f"={expense_ref}"
+        ws.cell(row=r, column=4).number_format = '#,##0"円"'
         ws.cell(row=r, column=5).value = f"={income_ref}-{expense_ref}"
+        ws.cell(row=r, column=5).number_format = '#,##0"円"'
         ws.cell(row=r, column=6).value = f'=IF({income_ref}=0,"",({income_ref}-{expense_ref})/{income_ref})'
         ws.cell(row=r, column=6).number_format = "0%"
-        for c in range(2, 7):
+        # Month-over-month expense comparison
+        if i == 0:
+            ws.cell(row=r, column=7).value = '="--"'
+        else:
+            ws.cell(row=r, column=7).value = f'=IF(D{r-1}=0,"--",(D{r}-D{r-1})/D{r-1})'
+            ws.cell(row=r, column=7).number_format = "+0%;-0%"
+        # Evaluation emoji
+        ws.cell(row=r, column=8).value = f'=IF({income_ref}=0,"",IF(({income_ref}-{expense_ref})/{income_ref}>=0.2,"◎ 優秀",IF(({income_ref}-{expense_ref})/{income_ref}>=0.1,"○ 良好",IF(({income_ref}-{expense_ref})>=0,"△ 普通","✕ 赤字"))))'
+        ws.cell(row=r, column=8).alignment = Alignment(horizontal="center")
+        for c in range(2, 9):
             ws.cell(row=r, column=c).border = thin_border
-            if c >= 3:
-                ws.cell(row=r, column=c).number_format = '#,##0"円"'
+        # Alternate row shading
+        if i % 2 == 0:
+            for c in range(2, 9):
+                ws.cell(row=r, column=c).fill = PatternFill(
+                    start_color="F8F9FA", end_color="F8F9FA", fill_type="solid")
 
-    # Update annual summary with SUM formulas
-    ws.cell(row=5, column=4).value = f"=SUM(D12:D23)"
-    ws.cell(row=5, column=4).number_format = '#,##0"円"'
-    ws.cell(row=6, column=4).value = f"=SUM(E12:E23)"
-    ws.cell(row=6, column=4).number_format = '#,##0"円"'
-    ws.cell(row=7, column=4).value = f"=D5-D6"
-    ws.cell(row=7, column=4).number_format = '#,##0"円"'
+    # ===== Charts Section =====
+    chart_start_row = tbl_hdr_row + 14
 
-    # Chart - Monthly income vs expense
+    # Bar Chart - Monthly income vs expense
+    ws.merge_cells(f"B{chart_start_row}:D{chart_start_row}")
+    ws[f"B{chart_start_row}"] = "📊 月別 収入 vs 支出 推移"
+    ws[f"B{chart_start_row}"].font = Font(name="Arial", size=12, bold=True, color=COLORS["primary"])
+
     chart = BarChart()
     chart.type = "col"
-    chart.title = "月別 収入 vs 支出"
-    chart.y_axis.title = "金額（円）"
-    chart.x_axis.title = "月"
     chart.style = 10
-    data = Reference(ws, min_col=3, min_row=11, max_col=4, max_row=23)
-    cats = Reference(ws, min_col=2, min_row=12, max_row=23)
+    chart.title = None
+    chart.y_axis.title = "金額（円）"
+    chart.y_axis.numFmt = '#,##0'
+    chart.x_axis.title = None
+    data = Reference(ws, min_col=3, min_row=tbl_hdr_row, max_col=4, max_row=tbl_hdr_row + 12)
+    cats = Reference(ws, min_col=2, min_row=tbl_hdr_row + 1, max_row=tbl_hdr_row + 12)
     chart.add_data(data, titles_from_data=True)
     chart.set_categories(cats)
     chart.shape = 4
-    chart.width = 20
-    chart.height = 12
-    ws.add_chart(chart, "B26")
+    chart.width = 22
+    chart.height = 11
+    # Color the series
+    chart.series[0].graphicalProperties.solidFill = COLORS["success"]  # Income = green
+    chart.series[1].graphicalProperties.solidFill = COLORS["danger"]   # Expense = red
+    ws.add_chart(chart, f"B{chart_start_row + 1}")
+
+    # Savings trend line chart
+    savings_chart_row = chart_start_row + 18
+    ws.merge_cells(f"B{savings_chart_row}:D{savings_chart_row}")
+    ws[f"B{savings_chart_row}"] = "💰 月別貯蓄額の推移"
+    ws[f"B{savings_chart_row}"].font = Font(name="Arial", size=12, bold=True, color=COLORS["primary"])
+
+    line_chart = LineChart()
+    line_chart.style = 10
+    line_chart.title = None
+    line_chart.y_axis.title = "貯蓄額（円）"
+    line_chart.y_axis.numFmt = '#,##0'
+    line_chart.x_axis.title = None
+    savings_data = Reference(ws, min_col=5, min_row=tbl_hdr_row, max_row=tbl_hdr_row + 12)
+    line_chart.add_data(savings_data, titles_from_data=True)
+    line_chart.set_categories(cats)
+    line_chart.width = 22
+    line_chart.height = 10
+    line_chart.series[0].graphicalProperties.line.solidFill = COLORS["accent"]
+    line_chart.series[0].graphicalProperties.line.width = 25000
+    ws.add_chart(line_chart, f"B{savings_chart_row + 1}")
+
+    # ===== Category Breakdown Section (right side) =====
+    # Put expense category summary on the right
+    cat_col = 10  # Column J
+    ws.column_dimensions[get_column_letter(cat_col)].width = 22
+    ws.column_dimensions[get_column_letter(cat_col + 1)].width = 14
+    ws.column_dimensions[get_column_letter(cat_col + 2)].width = 10
+
+    ws.merge_cells(f"{get_column_letter(cat_col)}{section_row}:{get_column_letter(cat_col+2)}{section_row}")
+    ws.cell(row=section_row, column=cat_col, value="🏷️ カテゴリ別 年間支出")
+    ws.cell(row=section_row, column=cat_col).font = Font(name="Arial", size=13, bold=True, color=COLORS["primary"])
+
+    cat_hdr_row = section_row + 1
+    cat_headers = ["カテゴリ", "年間合計", "構成比"]
+    for col, h in enumerate(cat_headers, cat_col):
+        ws.cell(row=cat_hdr_row, column=col, value=h)
+        ws.cell(row=cat_hdr_row, column=col).font = header_font
+        ws.cell(row=cat_hdr_row, column=col).fill = header_fill
+        ws.cell(row=cat_hdr_row, column=col).alignment = Alignment(horizontal="center")
+        ws.cell(row=cat_hdr_row, column=col).border = thin_border
+
+    for i, cat in enumerate(EXPENSE_CATEGORIES):
+        r = cat_hdr_row + 1 + i
+        ws.cell(row=r, column=cat_col, value=cat).border = thin_border
+        # Sum across all months for this category (row offset in monthly sheets)
+        # In monthly sheet, expenses start at row 11 (row 10+1)
+        expense_row_in_month = 11 + i
+        parts = [f"'{m}'!D{expense_row_in_month}" for m in MONTHS]
+        ws.cell(row=r, column=cat_col + 1, value=f"={'+'.join(parts)}")
+        ws.cell(row=r, column=cat_col + 1).number_format = '#,##0"円"'
+        ws.cell(row=r, column=cat_col + 1).border = thin_border
+        # Percentage
+        total_ref = f"D{val_row}"
+        ws.cell(row=r, column=cat_col + 2, value=f'=IF({total_ref}=0,"",{get_column_letter(cat_col+1)}{r}/{total_ref})')
+        ws.cell(row=r, column=cat_col + 2).number_format = "0%"
+        ws.cell(row=r, column=cat_col + 2).alignment = Alignment(horizontal="center")
+        ws.cell(row=r, column=cat_col + 2).border = thin_border
+        # Alternate rows
+        if i % 2 == 0:
+            for c in range(cat_col, cat_col + 3):
+                ws.cell(row=r, column=c).fill = PatternFill(
+                    start_color="F8F9FA", end_color="F8F9FA", fill_type="solid")
+
+    # Pie chart for category breakdown
+    pie_row = cat_hdr_row + len(EXPENSE_CATEGORIES) + 2
+    pie = PieChart()
+    pie.title = "支出カテゴリ構成比"
+    pie.style = 10
+    pie_data = Reference(ws, min_col=cat_col + 1, min_row=cat_hdr_row,
+                         max_row=cat_hdr_row + len(EXPENSE_CATEGORIES))
+    pie_cats = Reference(ws, min_col=cat_col, min_row=cat_hdr_row + 1,
+                         max_row=cat_hdr_row + len(EXPENSE_CATEGORIES))
+    pie.add_data(pie_data, titles_from_data=True)
+    pie.set_categories(pie_cats)
+    pie.width = 16
+    pie.height = 12
+    ws.add_chart(pie, f"{get_column_letter(cat_col)}{pie_row}")
 
 
 def create_monthly_sheet(wb, month_name):
@@ -401,6 +547,38 @@ def create_instructions(wb):
             ws.cell(row=i, column=2).font = subtitle_font
 
 
+def add_sample_data(wb):
+    """Add sample data to first 3 months so the dashboard looks good."""
+    import random
+    random.seed(42)
+
+    # Sample monthly income (salary + side income)
+    monthly_incomes = [
+        [300000, 50000, 5000, 0],   # Jan
+        [300000, 45000, 5000, 10000],  # Feb
+        [300000, 60000, 8000, 0],   # Mar
+    ]
+
+    # Sample monthly expenses per category
+    monthly_expenses = [
+        [80000, 15000, 45000, 8000, 12000, 10000, 15000, 3000, 0, 15000, 5000, 3000, 10000, 5000],
+        [80000, 13000, 42000, 7000, 11000, 10000, 15000, 5000, 0, 12000, 3000, 4000, 8000, 4000],
+        [80000, 12000, 48000, 9000, 13000, 10000, 15000, 0, 5000, 20000, 8000, 3000, 15000, 6000],
+    ]
+
+    for month_idx in range(3):
+        month_name = MONTHS[month_idx]
+        ws = wb[month_name]
+
+        # Fill income (rows 4-7, column D = actual)
+        for i, amount in enumerate(monthly_incomes[month_idx]):
+            ws.cell(row=4 + i, column=4, value=amount)
+
+        # Fill expenses (rows 11-24, column D = actual)
+        for i, amount in enumerate(monthly_expenses[month_idx]):
+            ws.cell(row=11 + i, column=4, value=amount)
+
+
 def main():
     wb = Workbook()
 
@@ -411,6 +589,9 @@ def main():
     create_bills_tracker(wb)
     create_savings_tracker(wb)
     create_instructions(wb)
+
+    # Add sample data for visual demonstration
+    add_sample_data(wb)
 
     wb.save(OUTPUT_PATH)
     print(f"✅ 家計簿テンプレートを作成しました: {OUTPUT_PATH}")
