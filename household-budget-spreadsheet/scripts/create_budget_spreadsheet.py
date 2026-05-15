@@ -28,10 +28,10 @@ COLORS = {
 }
 
 # Styles
-header_font = Font(name="Arial", size=12, bold=True, color="FFFFFF")
-title_font = Font(name="Arial", size=16, bold=True, color=COLORS["primary"])
-subtitle_font = Font(name="Arial", size=11, bold=True, color=COLORS["primary"])
-normal_font = Font(name="Arial", size=10)
+header_font = Font(name="メイリオ", size=12, bold=True, color="FFFFFF")
+title_font = Font(name="メイリオ", size=16, bold=True, color=COLORS["primary"])
+subtitle_font = Font(name="メイリオ", size=11, bold=True, color=COLORS["primary"])
+normal_font = Font(name="メイリオ", size=10)
 header_fill = PatternFill(start_color=COLORS["header_bg"], end_color=COLORS["header_bg"], fill_type="solid")
 income_fill = PatternFill(start_color=COLORS["income_bg"], end_color=COLORS["income_bg"], fill_type="solid")
 expense_fill = PatternFill(start_color=COLORS["expense_bg"], end_color=COLORS["expense_bg"], fill_type="solid")
@@ -281,7 +281,7 @@ def create_dashboard(wb):
     # ===== Title =====
     ws.merge_cells("B2:H2")
     ws["B2"] = "📊 家計簿ダッシュボード"
-    ws["B2"].font = Font(name="Arial", size=20, bold=True, color=COLORS["primary"])
+    ws["B2"].font = Font(name="メイリオ", size=20, bold=True, color=COLORS["primary"])
     ws["B2"].alignment = Alignment(vertical="center")
 
     # ===== KPI Cards Row =====
@@ -302,7 +302,7 @@ def create_dashboard(wb):
         col_num = 2 + i * 2 if i < 3 else 8
         # Label row
         cell = ws.cell(row=kpi_row, column=col_num, value=label)
-        cell.font = Font(name="Arial", size=9, color="666666")
+        cell.font = Font(name="メイリオ", size=9, color="666666")
         cell.fill = PatternFill(start_color=COLORS[bg_key], end_color=COLORS[bg_key], fill_type="solid")
         cell.alignment = Alignment(horizontal="center")
         if i < 3:
@@ -314,7 +314,7 @@ def create_dashboard(wb):
     # Income total
     ws.merge_cells(f"B{val_row}:C{val_row}")
     ws.cell(row=val_row, column=2, value=f"=SUM(C{kpi_row+6}:C{kpi_row+17})")
-    ws.cell(row=val_row, column=2).font = Font(name="Arial", size=16, bold=True, color=COLORS["success"])
+    ws.cell(row=val_row, column=2).font = Font(name="メイリオ", size=16, bold=True, color=COLORS["success"])
     ws.cell(row=val_row, column=2).number_format = '#,##0"円"'
     ws.cell(row=val_row, column=2).alignment = Alignment(horizontal="center", vertical="center")
     ws.cell(row=val_row, column=2).fill = income_fill
@@ -323,7 +323,7 @@ def create_dashboard(wb):
     # Expense total
     ws.merge_cells(f"D{val_row}:E{val_row}")
     ws.cell(row=val_row, column=4, value=f"=SUM(D{kpi_row+6}:D{kpi_row+17})")
-    ws.cell(row=val_row, column=4).font = Font(name="Arial", size=16, bold=True, color=COLORS["danger"])
+    ws.cell(row=val_row, column=4).font = Font(name="メイリオ", size=16, bold=True, color=COLORS["danger"])
     ws.cell(row=val_row, column=4).number_format = '#,##0"円"'
     ws.cell(row=val_row, column=4).alignment = Alignment(horizontal="center", vertical="center")
     ws.cell(row=val_row, column=4).fill = expense_fill
@@ -332,7 +332,7 @@ def create_dashboard(wb):
     # Savings total
     ws.merge_cells(f"F{val_row}:G{val_row}")
     ws.cell(row=val_row, column=6, value=f"=B{val_row}-D{val_row}")
-    ws.cell(row=val_row, column=6).font = Font(name="Arial", size=16, bold=True, color=COLORS["accent"])
+    ws.cell(row=val_row, column=6).font = Font(name="メイリオ", size=16, bold=True, color=COLORS["accent"])
     ws.cell(row=val_row, column=6).number_format = '#,##0"円"'
     ws.cell(row=val_row, column=6).alignment = Alignment(horizontal="center", vertical="center")
     ws.cell(row=val_row, column=6).fill = savings_fill
@@ -340,7 +340,7 @@ def create_dashboard(wb):
 
     # Savings rate
     ws.cell(row=val_row, column=8, value=f'=IF(B{val_row}=0,"--",F{val_row}/B{val_row})')
-    ws.cell(row=val_row, column=8).font = Font(name="Arial", size=16, bold=True, color=COLORS["primary"])
+    ws.cell(row=val_row, column=8).font = Font(name="メイリオ", size=16, bold=True, color=COLORS["primary"])
     ws.cell(row=val_row, column=8).number_format = "0%"
     ws.cell(row=val_row, column=8).alignment = Alignment(horizontal="center", vertical="center")
     ws.cell(row=val_row, column=8).fill = light_fill
@@ -358,7 +358,7 @@ def create_dashboard(wb):
     section_row = kpi_row + 4
     ws.merge_cells(f"B{section_row}:H{section_row}")
     ws[f"B{section_row}"] = "📅 月別収支サマリー"
-    ws[f"B{section_row}"].font = Font(name="Arial", size=13, bold=True, color=COLORS["primary"])
+    ws[f"B{section_row}"].font = Font(name="メイリオ", size=13, bold=True, color=COLORS["primary"])
     ws.row_dimensions[section_row].height = 22
 
     # Table headers
@@ -373,7 +373,7 @@ def create_dashboard(wb):
         r = tbl_hdr_row + 1 + i
         ws.cell(row=r, column=2, value=f"{MONTH_ICONS[i]} {month}").border = thin_border
         ws.cell(row=r, column=2).alignment = Alignment(horizontal="center")
-        ws.cell(row=r, column=2).font = Font(name="Arial", size=10, bold=True)
+        ws.cell(row=r, column=2).font = Font(name="メイリオ", size=10, bold=True)
         # Reference formulas to monthly sheets
         income_ref = f"'{month}'!E3"
         expense_ref = f"'{month}'!E10"
@@ -408,7 +408,7 @@ def create_dashboard(wb):
     # Bar Chart - Monthly income vs expense
     ws.merge_cells(f"B{chart_start_row}:D{chart_start_row}")
     ws[f"B{chart_start_row}"] = "📊 月別 収入 vs 支出 推移"
-    ws[f"B{chart_start_row}"].font = Font(name="Arial", size=12, bold=True, color=COLORS["primary"])
+    ws[f"B{chart_start_row}"].font = Font(name="メイリオ", size=12, bold=True, color=COLORS["primary"])
 
     chart = BarChart()
     chart.type = "col"
@@ -446,7 +446,7 @@ def create_dashboard(wb):
     savings_chart_row = chart_start_row + 18
     ws.merge_cells(f"B{savings_chart_row}:D{savings_chart_row}")
     ws[f"B{savings_chart_row}"] = "💰 月別貯蓄額の推移"
-    ws[f"B{savings_chart_row}"].font = Font(name="Arial", size=12, bold=True, color=COLORS["primary"])
+    ws[f"B{savings_chart_row}"].font = Font(name="メイリオ", size=12, bold=True, color=COLORS["primary"])
 
     line_chart = LineChart()
     line_chart.style = 12
@@ -480,7 +480,7 @@ def create_dashboard(wb):
 
     ws.merge_cells(f"{get_column_letter(cat_col)}{section_row}:{get_column_letter(cat_col+2)}{section_row}")
     ws.cell(row=section_row, column=cat_col, value="🏷️ カテゴリ別 年間支出")
-    ws.cell(row=section_row, column=cat_col).font = Font(name="Arial", size=13, bold=True, color=COLORS["primary"])
+    ws.cell(row=section_row, column=cat_col).font = Font(name="メイリオ", size=13, bold=True, color=COLORS["primary"])
 
     cat_hdr_row = section_row + 1
     cat_headers = ["🏷️ カテゴリ", "💴 年間合計", "📊 構成比"]
@@ -607,7 +607,7 @@ def create_monthly_sheet(wb, month_name):
     ws.cell(row=bal_row + 2, column=4).number_format = '#,##0"円"'
 
     ws.cell(row=bal_row + 3, column=2, value="✨ 差額（貯蓄）").border = thin_border
-    ws.cell(row=bal_row + 3, column=2).font = Font(name="Arial", size=10, bold=True)
+    ws.cell(row=bal_row + 3, column=2).font = Font(name="メイリオ", size=10, bold=True)
     ws.cell(row=bal_row + 3, column=4, value=f"=D{bal_row+1}-D{bal_row+2}").border = thin_border
     ws.cell(row=bal_row + 3, column=4).number_format = '#,##0"円"'
 
