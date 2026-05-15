@@ -66,6 +66,22 @@ EXPENSE_CATEGORIES = [
     "📦 その他",
 ]
 
+# 日別支出記録で使う項目名リスト
+EXPENSE_ITEMS = [
+    "家賃", "管理費", "駐車場代",
+    "電気代", "ガス代", "水道代",
+    "食料品", "外食", "カフェ",
+    "日用品", "消耗品",
+    "電車", "バス", "タクシー", "ガソリン",
+    "携帯電話", "ネット回線",
+    "Netflix", "Spotify", "YouTube",
+    "保険料", "医療費", "薬代",
+    "書籍", "習い事",
+    "衣服", "美容院",
+    "飲み会", "ご祝儀",
+    "コンビニ", "その他",
+]
+
 
 def style_header_row(ws, row, max_col):
     for col in range(1, max_col + 1):
@@ -425,7 +441,7 @@ def create_monthly_sheet(wb, month_name):
     ws.cell(row=log_row, column=2, value="📝【日別支出記録】")
     ws.cell(row=log_row, column=2).font = subtitle_font
 
-    log_headers = ["📅 日付（何日）", "🏷️ カテゴリ（種類）", "💴 金額（円）", "💳 支払方法", "📝 メモ・備考"]
+    log_headers = ["📅 日付（何日）", "📋 項目名", "💴 金額（円）", "💳 支払方法", "📝 メモ・備考"]
     log_row += 1
     for col, h in enumerate(log_headers, 2):
         ws.cell(row=log_row, column=col, value=h)
@@ -437,19 +453,19 @@ def create_monthly_sheet(wb, month_name):
         for c in range(2, 7):
             ws.cell(row=r, column=c).border = thin_border
 
-    # Data validation: Category dropdown for daily expense log
-    category_list = ",".join([c.split(" ", 1)[1] if " " in c else c for c in EXPENSE_CATEGORIES])
-    dv_category = DataValidation(
+    # Data validation: Item name dropdown for daily expense log
+    item_list = ",".join(EXPENSE_ITEMS)
+    dv_item = DataValidation(
         type="list",
-        formula1=f'"{category_list}"',
+        formula1=f'"{item_list}"',
         allow_blank=True,
     )
-    dv_category.error = "リストからカテゴリを選択してください"
-    dv_category.errorTitle = "カテゴリエラー"
-    dv_category.prompt = "カテゴリを選んでください"
-    dv_category.promptTitle = "カテゴリ選択"
-    dv_category.add(f"C{log_row + 1}:C{log_row + 31}")
-    ws.add_data_validation(dv_category)
+    dv_item.error = "リストから項目名を選択してください"
+    dv_item.errorTitle = "項目名エラー"
+    dv_item.prompt = "項目名を選んでください"
+    dv_item.promptTitle = "項目名選択"
+    dv_item.add(f"C{log_row + 1}:C{log_row + 31}")
+    ws.add_data_validation(dv_item)
 
     # Data validation: Payment method dropdown
     payment_methods = "現金,クレジットカード,デビットカード,電子マネー,QRコード決済,口座振替,その他"
