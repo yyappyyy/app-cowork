@@ -45,23 +45,24 @@ thin_border = Border(
 )
 
 MONTHS = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]
+MONTH_ICONS = ["⛄", "💝", "🌸", "🌷", "🎏", "☔", "🎋", "🌻", "🌾", "🎃", "🍂", "🎄"]
 
-INCOME_CATEGORIES = ["給与", "副業", "投資収入", "その他収入"]
+INCOME_CATEGORIES = ["💼 給与", "🔨 副業", "📈 投資収入", "🎁 その他収入"]
 EXPENSE_CATEGORIES = [
-    "住居費（家賃/ローン）",
-    "水道光熱費",
-    "食費",
-    "日用品",
-    "交通費",
-    "通信費",
-    "保険料",
-    "医療費",
-    "教育費",
-    "娯楽費",
-    "衣服費",
-    "美容費",
-    "交際費",
-    "その他",
+    "🏠 住居費（家賃/ローン）",
+    "💡 水道光熱費",
+    "🍽️ 食費",
+    "🧴 日用品",
+    "🚃 交通費",
+    "📱 通信費",
+    "🛡️ 保険料",
+    "🏥 医療費",
+    "📚 教育費",
+    "🎮 娯楽費",
+    "👔 衣服費",
+    "💇 美容費",
+    "🍻 交際費",
+    "📦 その他",
 ]
 
 
@@ -174,7 +175,7 @@ def create_dashboard(wb):
 
     # Table headers
     tbl_hdr_row = section_row + 1
-    headers2 = ["月", "収入", "支出", "貯蓄", "貯蓄率", "前月比支出", "評価"]
+    headers2 = ["🗓️ 月", "💚 収入", "🔴 支出", "💰 貯蓄", "📊 貯蓄率", "📉 前月比支出", "🏅 評価"]
     for col, h in enumerate(headers2, 2):
         ws.cell(row=tbl_hdr_row, column=col, value=h)
     style_header_row(ws, tbl_hdr_row, 8)
@@ -182,7 +183,7 @@ def create_dashboard(wb):
     # Monthly data rows
     for i, month in enumerate(MONTHS):
         r = tbl_hdr_row + 1 + i
-        ws.cell(row=r, column=2, value=month).border = thin_border
+        ws.cell(row=r, column=2, value=f"{MONTH_ICONS[i]} {month}").border = thin_border
         ws.cell(row=r, column=2).alignment = Alignment(horizontal="center")
         ws.cell(row=r, column=2).font = Font(name="Arial", size=10, bold=True)
         # Reference formulas to monthly sheets
@@ -273,7 +274,7 @@ def create_dashboard(wb):
     ws.cell(row=section_row, column=cat_col).font = Font(name="Arial", size=13, bold=True, color=COLORS["primary"])
 
     cat_hdr_row = section_row + 1
-    cat_headers = ["カテゴリ", "年間合計", "構成比"]
+    cat_headers = ["🏷️ カテゴリ", "💴 年間合計", "📊 構成比"]
     for col, h in enumerate(cat_headers, cat_col):
         ws.cell(row=cat_hdr_row, column=col, value=h)
         ws.cell(row=cat_hdr_row, column=col).font = header_font
@@ -320,18 +321,20 @@ def create_dashboard(wb):
 
 
 def create_monthly_sheet(wb, month_name):
+    month_idx = MONTHS.index(month_name)
+    icon = MONTH_ICONS[month_idx]
     ws = wb.create_sheet(title=month_name)
     set_col_widths(ws, [3, 22, 15, 15, 15, 15, 3])
 
     # Title
     ws.merge_cells("B1:F1")
-    ws[f"B1"] = f"📋 {month_name} 家計簿"
+    ws[f"B1"] = f"{icon} {month_name} 家計簿"
     ws[f"B1"].font = title_font
 
     # === Income Section ===
     row = 3
-    headers = ["カテゴリ", "予算", "実績", "合計", "メモ"]
-    ws.cell(row=row, column=2, value="【収入】")
+    headers = ["🏷️ カテゴリ", "📋 予算", "✅ 実績", "📊 合計", "📝 メモ"]
+    ws.cell(row=row, column=2, value="💚【収入】")
     ws.cell(row=row, column=2).font = subtitle_font
     ws.cell(row=row, column=2).fill = income_fill
     # Income total formula
@@ -355,7 +358,7 @@ def create_monthly_sheet(wb, month_name):
 
     # === Expense Section ===
     row = 4 + len(INCOME_CATEGORIES) + 2
-    ws.cell(row=row, column=2, value="【支出】")
+    ws.cell(row=row, column=2, value="🔴【支出】")
     ws.cell(row=row, column=2).font = subtitle_font
     ws.cell(row=row, column=2).fill = expense_fill
     expense_start = row + 1
@@ -377,30 +380,30 @@ def create_monthly_sheet(wb, month_name):
 
     # === Balance Section ===
     bal_row = row + len(EXPENSE_CATEGORIES) + 2
-    ws.cell(row=bal_row, column=2, value="【収支バランス】")
+    ws.cell(row=bal_row, column=2, value="⚖️【収支バランス】")
     ws.cell(row=bal_row, column=2).font = subtitle_font
     ws.cell(row=bal_row, column=2).fill = savings_fill
 
-    ws.cell(row=bal_row + 1, column=2, value="収入合計").border = thin_border
+    ws.cell(row=bal_row + 1, column=2, value="⬆️ 収入合計").border = thin_border
     ws.cell(row=bal_row + 1, column=4, value=f"=E3").border = thin_border
     ws.cell(row=bal_row + 1, column=4).number_format = '#,##0"円"'
 
-    ws.cell(row=bal_row + 2, column=2, value="支出合計").border = thin_border
+    ws.cell(row=bal_row + 2, column=2, value="⬇️ 支出合計").border = thin_border
     expense_header_row = 4 + len(INCOME_CATEGORIES) + 2
     ws.cell(row=bal_row + 2, column=4, value=f"=E{expense_header_row}").border = thin_border
     ws.cell(row=bal_row + 2, column=4).number_format = '#,##0"円"'
 
-    ws.cell(row=bal_row + 3, column=2, value="差額（貯蓄）").border = thin_border
+    ws.cell(row=bal_row + 3, column=2, value="✨ 差額（貯蓄）").border = thin_border
     ws.cell(row=bal_row + 3, column=2).font = Font(name="Arial", size=10, bold=True)
     ws.cell(row=bal_row + 3, column=4, value=f"=D{bal_row+1}-D{bal_row+2}").border = thin_border
     ws.cell(row=bal_row + 3, column=4).number_format = '#,##0"円"'
 
     # === Daily Expense Log ===
     log_row = bal_row + 6
-    ws.cell(row=log_row, column=2, value="【日別支出記録】")
+    ws.cell(row=log_row, column=2, value="📝【日別支出記録】")
     ws.cell(row=log_row, column=2).font = subtitle_font
 
-    log_headers = ["日付", "カテゴリ", "金額", "支払方法", "メモ"]
+    log_headers = ["📅 日付", "🏷️ カテゴリ", "💴 金額", "💳 支払方法", "📝 メモ"]
     log_row += 1
     for col, h in enumerate(log_headers, 2):
         ws.cell(row=log_row, column=col, value=h)
@@ -421,7 +424,7 @@ def create_bills_tracker(wb):
     ws["B1"] = "📌 固定費・サブスクリプション管理"
     ws["B1"].font = title_font
 
-    headers = ["項目名", "月額", "支払日", "支払方法", "カテゴリ", "次回支払日", "ステータス"]
+    headers = ["📋 項目名", "💴 月額", "📅 支払日", "💳 支払方法", "🏷️ カテゴリ", "⏰ 次回支払日", "✅ ステータス"]
     row = 3
     for col, h in enumerate(headers, 2):
         ws.cell(row=row, column=col, value=h)
@@ -429,15 +432,15 @@ def create_bills_tracker(wb):
 
     # Sample entries
     bills = [
-        ("家賃", 80000, 25, "口座振替", "住居費", "", ""),
-        ("電気代", 8000, 15, "口座振替", "水道光熱費", "", ""),
-        ("ガス代", 5000, 15, "口座振替", "水道光熱費", "", ""),
-        ("水道代", 4000, 15, "口座振替", "水道光熱費", "", ""),
-        ("携帯電話", 5000, 10, "クレジットカード", "通信費", "", ""),
-        ("インターネット", 5000, 20, "クレジットカード", "通信費", "", ""),
-        ("Netflix", 1490, 1, "クレジットカード", "娯楽費", "", ""),
-        ("Spotify", 980, 1, "クレジットカード", "娯楽費", "", ""),
-        ("生命保険", 10000, 27, "口座振替", "保険料", "", ""),
+        ("🏠 家賃", 80000, 25, "口座振替", "住居費", "", ""),
+        ("⚡ 電気代", 8000, 15, "口座振替", "水道光熱費", "", ""),
+        ("🔥 ガス代", 5000, 15, "口座振替", "水道光熱費", "", ""),
+        ("💧 水道代", 4000, 15, "口座振替", "水道光熱費", "", ""),
+        ("📱 携帯電話", 5000, 10, "クレジットカード", "通信費", "", ""),
+        ("🌐 インターネット", 5000, 20, "クレジットカード", "通信費", "", ""),
+        ("🎬 Netflix", 1490, 1, "クレジットカード", "娯楽費", "", ""),
+        ("🎵 Spotify", 980, 1, "クレジットカード", "娯楽費", "", ""),
+        ("🛡️ 生命保険", 10000, 27, "口座振替", "保険料", "", ""),
         ("", 0, "", "", "", "", ""),
         ("", 0, "", "", "", "", ""),
         ("", 0, "", "", "", "", ""),
@@ -453,7 +456,7 @@ def create_bills_tracker(wb):
 
     # Total
     total_row = row + 1 + len(bills) + 1
-    ws.cell(row=total_row, column=2, value="月額合計").font = subtitle_font
+    ws.cell(row=total_row, column=2, value="📊 月額合計").font = subtitle_font
     ws.cell(row=total_row, column=3, value=f"=SUM(C4:C{row+len(bills)})").number_format = '#,##0"円"'
     ws.cell(row=total_row, column=3).font = subtitle_font
 
@@ -466,18 +469,18 @@ def create_savings_tracker(wb):
     ws["B1"] = "🎯 貯蓄目標トラッカー"
     ws["B1"].font = title_font
 
-    headers = ["目標名", "目標金額", "現在の貯蓄", "残り", "達成率", "期限"]
+    headers = ["🎯 目標名", "💰 目標金額", "📊 現在の貯蓄", "📉 残り", "🏆 達成率", "📅 期限"]
     row = 3
     for col, h in enumerate(headers, 2):
         ws.cell(row=row, column=col, value=h)
     style_header_row(ws, row, 7)
 
     goals = [
-        ("緊急予備費", 1000000, 300000),
-        ("旅行資金", 500000, 150000),
-        ("車購入", 2000000, 500000),
-        ("教育資金", 3000000, 800000),
-        ("老後資金", 10000000, 1000000),
+        ("🆘 緊急予備費", 1000000, 300000),
+        ("✈️ 旅行資金", 500000, 150000),
+        ("🚗 車購入", 2000000, 500000),
+        ("🎓 教育資金", 3000000, 800000),
+        ("🏖️ 老後資金", 10000000, 1000000),
     ]
 
     for i, (name, target, current) in enumerate(goals):
@@ -508,42 +511,42 @@ def create_instructions(wb):
 
     instructions = [
         "",
-        "【はじめに】",
+        "📌【はじめに】",
         "この家計簿テンプレートは、毎月の収入と支出を管理し、",
         "年間の貯蓄目標を達成するためのツールです。",
         "",
-        "【基本的な使い方】",
-        "1. 各月のシートに毎日の収入と支出を記録します",
-        "2. カテゴリごとの予算を設定します（予算列に入力）",
-        "3. 実績を入力すると、自動的に合計が計算されます",
-        "4. ダッシュボードで年間のサマリーを確認できます",
+        "🔰【基本的な使い方】",
+        "1️⃣ 各月のシートに毎日の収入と支出を記録します",
+        "2️⃣ カテゴリごとの予算を設定します（予算列に入力）",
+        "3️⃣ 実績を入力すると、自動的に合計が計算されます",
+        "4️⃣ ダッシュボードで年間のサマリーを確認できます",
         "",
-        "【シートの説明】",
-        "• ダッシュボード：年間の収支サマリーとグラフ",
-        "• 1月〜12月：各月の収支管理と日別支出記録",
-        "• 固定費・サブスク管理：毎月の固定費一覧",
-        "• 貯蓄目標：貯蓄目標の進捗管理",
+        "📑【シートの説明】",
+        "• 📊 ダッシュボード：年間の収支サマリーとグラフ",
+        "• 📅 1月〜12月：各月の収支管理と日別支出記録",
+        "• 📌 固定費・サブスク管理：毎月の固定費一覧",
+        "• 🎯 貯蓄目標：貯蓄目標の進捗管理",
         "",
-        "【カスタマイズ方法】",
-        "• カテゴリは自由に追加・変更できます",
-        "• 色やフォントはお好みで変更してください",
-        "• 行を追加する場合は、数式が反映されるか確認してください",
+        "🔧【カスタマイズ方法】",
+        "• ✏️ カテゴリは自由に追加・変更できます",
+        "• 🎨 色やフォントはお好みで変更してください",
+        "• ➕ 行を追加する場合は、数式が反映されるか確認してください",
         "",
-        "【Tips】",
-        "• 毎日記録する習慣をつけましょう",
-        "• 月初に予算を設定し、月末に振り返りをしましょう",
-        "• 固定費は「固定費・サブスク管理」シートで一括管理",
-        "• 貯蓄目標を設定するとモチベーションが上がります",
+        "💡【Tips】",
+        "• ✍️ 毎日記録する習慣をつけましょう",
+        "• 🗓️ 月初に予算を設定し、月末に振り返りをしましょう",
+        "• 🔄 固定費は「固定費・サブスク管理」シートで一括管理",
+        "• 🚀 貯蓄目標を設定するとモチベーションが上がります",
         "",
-        "【注意事項】",
-        "• このファイルはGoogleスプレッドシートにインポートして使えます",
-        "• 数式のあるセルを上書きしないよう注意してください",
-        "• 定期的にバックアップを取ることをおすすめします",
+        "⚠️【注意事項】",
+        "• 🌐 このファイルはGoogleスプレッドシートにインポートして使えます",
+        "• 🔒 数式のあるセルを上書きしないよう注意してください",
+        "• 💾 定期的にバックアップを取ることをおすすめします",
     ]
 
     for i, line in enumerate(instructions, 2):
         ws.cell(row=i, column=2, value=line)
-        if line.startswith("【"):
+        if "【" in line:
             ws.cell(row=i, column=2).font = subtitle_font
 
 
