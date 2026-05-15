@@ -258,7 +258,7 @@ def create_dashboard(wb):
     line_chart.width = 22
     line_chart.height = 10
     line_chart.series[0].graphicalProperties.line.solidFill = COLORS["accent"]
-    line_chart.series[0].graphicalProperties.line.width = 25000
+    line_chart.series[0].graphicalProperties.line.width = 25000  # EMU units (≈2pt)
     ws.add_chart(line_chart, f"B{savings_chart_row + 1}")
 
     # ===== Category Breakdown Section (right side) =====
