@@ -7,6 +7,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side, numbers
 from openpyxl.chart import PieChart, BarChart, LineChart, Reference
 from openpyxl.utils import get_column_letter
 from openpyxl.formatting.rule import DataBarRule
+from openpyxl.worksheet.datavalidation import DataValidation
 from copy import copy
 
 OUTPUT_PATH = "/home/runner/work/app-cowork/app-cowork/household-budget-spreadsheet/家計簿テンプレート.xlsx"
@@ -424,7 +425,7 @@ def create_monthly_sheet(wb, month_name):
     ws.cell(row=log_row, column=2, value="📝【日別支出記録】")
     ws.cell(row=log_row, column=2).font = subtitle_font
 
-    log_headers = ["📅 日付", "🏷️ カテゴリ", "💴 金額", "💳 支払方法", "📝 メモ"]
+    log_headers = ["📅 日付（何日）", "🏷️ カテゴリ（種類）", "💴 金額（円）", "💳 支払方法", "📝 メモ・備考"]
     log_row += 1
     for col, h in enumerate(log_headers, 2):
         ws.cell(row=log_row, column=col, value=h)
@@ -435,6 +436,34 @@ def create_monthly_sheet(wb, month_name):
         r = log_row + i
         for c in range(2, 7):
             ws.cell(row=r, column=c).border = thin_border
+
+    # Data validation: Category dropdown for daily expense log
+    category_list = ",".join([c.split(" ", 1)[1] if " " in c else c for c in EXPENSE_CATEGORIES])
+    dv_category = DataValidation(
+        type="list",
+        formula1=f'"{category_list}"',
+        allow_blank=True,
+    )
+    dv_category.error = "リストからカテゴリを選択してください"
+    dv_category.errorTitle = "カテゴリエラー"
+    dv_category.prompt = "カテゴリを選んでください"
+    dv_category.promptTitle = "カテゴリ選択"
+    dv_category.add(f"C{log_row + 1}:C{log_row + 31}")
+    ws.add_data_validation(dv_category)
+
+    # Data validation: Payment method dropdown
+    payment_methods = "現金,クレジットカード,デビットカード,電子マネー,QRコード決済,口座振替,その他"
+    dv_payment = DataValidation(
+        type="list",
+        formula1=f'"{payment_methods}"',
+        allow_blank=True,
+    )
+    dv_payment.error = "リストから支払方法を選択してください"
+    dv_payment.errorTitle = "支払方法エラー"
+    dv_payment.prompt = "支払方法を選んでください"
+    dv_payment.promptTitle = "支払方法選択"
+    dv_payment.add(f"E{log_row + 1}:E{log_row + 31}")
+    ws.add_data_validation(dv_payment)
 
 
 def create_bills_tracker(wb):
