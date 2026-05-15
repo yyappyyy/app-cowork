@@ -224,21 +224,34 @@ def create_dashboard(wb):
 
     chart = BarChart()
     chart.type = "col"
-    chart.style = 10
-    chart.title = None
+    chart.style = 11
+    chart.title = "月別 収入 vs 支出 推移"
     chart.y_axis.title = "金額（円）"
-    chart.y_axis.numFmt = '#,##0'
-    chart.x_axis.title = None
+    chart.y_axis.numFmt = '#,##0"円"'
+    chart.y_axis.majorGridlines = openpyxl.chart.axis.ChartLines()
+    chart.x_axis.title = "月"
+    chart.x_axis.delete = False
+    chart.y_axis.delete = False
     data = Reference(ws, min_col=3, min_row=tbl_hdr_row, max_col=4, max_row=tbl_hdr_row + 12)
     cats = Reference(ws, min_col=2, min_row=tbl_hdr_row + 1, max_row=tbl_hdr_row + 12)
     chart.add_data(data, titles_from_data=True)
     chart.set_categories(cats)
     chart.shape = 4
-    chart.width = 22
-    chart.height = 11
+    chart.width = 26
+    chart.height = 14
+    chart.gapWidth = 80
+    chart.overlap = -10
+    # Legend position
+    chart.legend.position = "t"
     # Color the series
     chart.series[0].graphicalProperties.solidFill = COLORS["success"]  # Income = green
+    chart.series[0].graphicalProperties.line.solidFill = COLORS["success"]
     chart.series[1].graphicalProperties.solidFill = COLORS["danger"]   # Expense = red
+    chart.series[1].graphicalProperties.line.solidFill = COLORS["danger"]
+    # Add data labels
+    from openpyxl.chart.label import DataLabelList
+    chart.series[0].dLbls = DataLabelList(showVal=False)
+    chart.series[1].dLbls = DataLabelList(showVal=False)
     ws.add_chart(chart, f"B{chart_start_row + 1}")
 
     # Savings trend line chart
@@ -248,18 +261,26 @@ def create_dashboard(wb):
     ws[f"B{savings_chart_row}"].font = Font(name="Arial", size=12, bold=True, color=COLORS["primary"])
 
     line_chart = LineChart()
-    line_chart.style = 10
-    line_chart.title = None
+    line_chart.style = 12
+    line_chart.title = "月別貯蓄額の推移"
     line_chart.y_axis.title = "貯蓄額（円）"
-    line_chart.y_axis.numFmt = '#,##0'
-    line_chart.x_axis.title = None
+    line_chart.y_axis.numFmt = '#,##0"円"'
+    line_chart.y_axis.majorGridlines = openpyxl.chart.axis.ChartLines()
+    line_chart.x_axis.title = "月"
+    line_chart.x_axis.delete = False
+    line_chart.y_axis.delete = False
     savings_data = Reference(ws, min_col=5, min_row=tbl_hdr_row, max_row=tbl_hdr_row + 12)
     line_chart.add_data(savings_data, titles_from_data=True)
     line_chart.set_categories(cats)
-    line_chart.width = 22
-    line_chart.height = 10
+    line_chart.width = 26
+    line_chart.height = 12
+    line_chart.legend.position = "t"
     line_chart.series[0].graphicalProperties.line.solidFill = COLORS["accent"]
-    line_chart.series[0].graphicalProperties.line.width = 25000  # EMU units (≈2pt)
+    line_chart.series[0].graphicalProperties.line.width = 30000  # EMU units (≈2.4pt)
+    # Add markers to the line for graphical appeal
+    from openpyxl.chart.marker import Marker
+    line_chart.series[0].marker = Marker(symbol="circle", size=8)
+    line_chart.series[0].marker.graphicalProperties = openpyxl.chart.shapes.GraphicalProperties(solidFill=COLORS["accent"])
     ws.add_chart(line_chart, f"B{savings_chart_row + 1}")
 
     # ===== Category Breakdown Section (right side) =====
@@ -430,17 +451,54 @@ def create_bills_tracker(wb):
         ws.cell(row=row, column=col, value=h)
     style_header_row(ws, row, 8)
 
-    # Sample entries
+    # Sample entries - 大幅にカテゴリを拡充
     bills = [
-        ("🏠 家賃", 80000, 25, "口座振替", "住居費", "", ""),
-        ("⚡ 電気代", 8000, 15, "口座振替", "水道光熱費", "", ""),
-        ("🔥 ガス代", 5000, 15, "口座振替", "水道光熱費", "", ""),
-        ("💧 水道代", 4000, 15, "口座振替", "水道光熱費", "", ""),
-        ("📱 携帯電話", 5000, 10, "クレジットカード", "通信費", "", ""),
-        ("🌐 インターネット", 5000, 20, "クレジットカード", "通信費", "", ""),
-        ("🎬 Netflix", 1490, 1, "クレジットカード", "娯楽費", "", ""),
-        ("🎵 Spotify", 980, 1, "クレジットカード", "娯楽費", "", ""),
-        ("🛡️ 生命保険", 10000, 27, "口座振替", "保険料", "", ""),
+        # === 住居費 ===
+        ("🏠 家賃 / 住宅ローン", 80000, 25, "口座振替", "住居費", "", "継続中"),
+        ("🏢 管理費・共益費", 8000, 25, "口座振替", "住居費", "", "継続中"),
+        ("🅿️ 駐車場代", 12000, 27, "口座振替", "住居費", "", "継続中"),
+        ("🏘️ 火災・地震保険", 1500, 1, "口座振替", "保険料", "", "継続中"),
+        # === 水道光熱費 ===
+        ("⚡ 電気代", 8000, 15, "口座振替", "水道光熱費", "", "継続中"),
+        ("🔥 ガス代", 5000, 15, "口座振替", "水道光熱費", "", "継続中"),
+        ("💧 水道代", 4000, 15, "口座振替", "水道光熱費", "", "継続中"),
+        # === 通信費 ===
+        ("📱 携帯電話", 5000, 10, "クレジットカード", "通信費", "", "継続中"),
+        ("🌐 インターネット回線", 5000, 20, "クレジットカード", "通信費", "", "継続中"),
+        ("📡 NHK受信料", 1275, 1, "口座振替", "通信費", "", "継続中"),
+        # === 動画・音楽サブスク ===
+        ("🎬 Netflix", 1490, 1, "クレジットカード", "娯楽費", "", "継続中"),
+        ("🎞️ Amazon Prime", 600, 15, "クレジットカード", "娯楽費", "", "継続中"),
+        ("📺 Disney+", 990, 1, "クレジットカード", "娯楽費", "", "継続中"),
+        ("🎥 Hulu", 1026, 1, "クレジットカード", "娯楽費", "", "継続中"),
+        ("📼 U-NEXT", 2189, 1, "クレジットカード", "娯楽費", "", "停止中"),
+        ("🎵 Spotify", 980, 1, "クレジットカード", "娯楽費", "", "継続中"),
+        ("🎧 Apple Music", 1080, 1, "クレジットカード", "娯楽費", "", "停止中"),
+        ("📻 YouTube Premium", 1280, 1, "クレジットカード", "娯楽費", "", "継続中"),
+        # === ソフトウェア / クラウド ===
+        ("☁️ iCloud+ ストレージ", 400, 1, "クレジットカード", "通信費", "", "継続中"),
+        ("📁 Google One", 250, 1, "クレジットカード", "通信費", "", "継続中"),
+        ("💼 Microsoft 365", 1284, 1, "クレジットカード", "通信費", "", "継続中"),
+        ("🎨 Adobe Creative Cloud", 6480, 1, "クレジットカード", "教育費", "", "停止中"),
+        ("🤖 ChatGPT Plus", 3000, 1, "クレジットカード", "教育費", "", "継続中"),
+        ("📔 Notion", 1000, 1, "クレジットカード", "教育費", "", "停止中"),
+        # === 保険 ===
+        ("🛡️ 生命保険", 10000, 27, "口座振替", "保険料", "", "継続中"),
+        ("🏥 医療保険", 4000, 27, "口座振替", "保険料", "", "継続中"),
+        ("🚗 自動車保険", 5000, 27, "口座振替", "保険料", "", "継続中"),
+        ("👨‍👩‍👧 学資保険", 10000, 27, "口座振替", "保険料", "", "停止中"),
+        # === 健康・フィットネス ===
+        ("💪 ジム会費", 8000, 5, "クレジットカード", "美容費", "", "継続中"),
+        ("🧘 ヨガスタジオ", 12000, 5, "クレジットカード", "美容費", "", "停止中"),
+        # === 教育 ===
+        ("📚 英会話レッスン", 6000, 1, "クレジットカード", "教育費", "", "停止中"),
+        ("📖 新聞購読", 4400, 1, "口座振替", "教育費", "", "停止中"),
+        # === 交通 ===
+        ("🚃 定期券", 15000, 1, "クレジットカード", "交通費", "", "継続中"),
+        # === その他 ===
+        ("💳 クレジットカード年会費", 11000, 5, "口座振替", "その他", "", "継続中"),
+        ("🎁 ふるさと納税（積立）", 5000, 25, "クレジットカード", "その他", "", "継続中"),
+        # === 予備行 ===
         ("", 0, "", "", "", "", ""),
         ("", 0, "", "", "", "", ""),
         ("", 0, "", "", "", "", ""),
