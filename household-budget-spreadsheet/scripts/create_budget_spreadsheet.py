@@ -196,8 +196,6 @@ def create_monthly_sheet(wb, month_name):
     ws.cell(row=row, column=5).number_format = '#,##0"円"'
 
     row = 4
-    for col, h in enumerate(headers, 2):
-        ws.cell(row=row - 1, column=col + 0)
     # Category rows for income
     for i, cat in enumerate(INCOME_CATEGORIES):
         r = row + i
@@ -206,7 +204,7 @@ def create_monthly_sheet(wb, month_name):
         ws.cell(row=r, column=3).number_format = '#,##0'
         ws.cell(row=r, column=4, value=0).border = thin_border  # Actual
         ws.cell(row=r, column=4).number_format = '#,##0'
-        ws.cell(row=r, column=5, value="").border = thin_border  # Formula
+        ws.cell(row=r, column=5, value="").border = thin_border  # Diff (user can add)
         ws.cell(row=r, column=6, value="").border = thin_border  # Memo
 
     # === Expense Section ===
@@ -219,12 +217,6 @@ def create_monthly_sheet(wb, month_name):
     ws.cell(row=row, column=5, value=f"=SUM(D{expense_start}:D{expense_end})")
     ws.cell(row=row, column=5).font = subtitle_font
     ws.cell(row=row, column=5).number_format = '#,##0"円"'
-
-    # Correct the dashboard reference row
-    # Dashboard references E3 for income and E21 for expense
-    # Let's ensure income total is at row 3 col 5, expense total at row 21 col 5
-    # Adjust: put income header at row 3
-    # Re-do the layout more carefully
 
     row += 1
     for i, cat in enumerate(EXPENSE_CATEGORIES):
