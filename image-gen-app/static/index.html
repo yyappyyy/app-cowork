@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 画像生成 + 背景透過</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f0f13;
+      color: #e8e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.4rem;
+      text-align: center;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    .card {
+      background: #1a1a24;
+      border: 1px solid #2a2a38;
+      border-radius: 16px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 640px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-bottom: 0.4rem;
+    }
+
+    textarea {
+      width: 100%;
+      background: #12121a;
+      border: 1px solid #2a2a38;
+      border-radius: 8px;
+      color: #e8e8f0;
+      font-size: 1rem;
+      padding: 0.75rem 1rem;
+      resize: vertical;
+      min-height: 90px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    textarea:focus { border-color: #7c3aed; }
+
+    .row {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .field { flex: 1; }
+
+    select {
+      width: 100%;
+      background: #12121a;
+      border: 1px solid #2a2a38;
+      border-radius: 8px;
+      color: #e8e8f0;
+      font-size: 0.95rem;
+      padding: 0.6rem 0.8rem;
+      outline: none;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #7c3aed;
+      cursor: pointer;
+    }
+
+    button[type="submit"] {
+      margin-top: 1.4rem;
+      width: 100%;
+      padding: 0.85rem;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #7c3aed, #2563eb);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    button[type="submit"]:hover { opacity: 0.88; }
+    button[type="submit"]:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .progress {
+      display: none;
+      margin-top: 1.6rem;
+      text-align: center;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 4px solid #2a2a38;
+      border-top-color: #7c3aed;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 0.8rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .result {
+      display: none;
+      margin-top: 1.6rem;
+    }
+
+    .result h2 {
+      font-size: 1rem;
+      color: #aaa;
+      margin-bottom: 0.8rem;
+    }
+
+    .preview-wrap {
+      background: repeating-conic-gradient(#222 0% 25%, #1a1a1a 0% 50%) 0 0 / 20px 20px;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 200px;
+    }
+
+    .preview-wrap img {
+      max-width: 100%;
+      max-height: 480px;
+      display: block;
+    }
+
+    .dl-btn {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 0.65rem 1.4rem;
+      background: #1e1e2e;
+      border: 1px solid #2a2a38;
+      border-radius: 8px;
+      color: #a78bfa;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .dl-btn:hover { background: #252535; }
+
+    .error {
+      display: none;
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      background: #2a1a1a;
+      border: 1px solid #7f1d1d;
+      border-radius: 8px;
+      color: #fca5a5;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>AI 画像生成 + 背景透過</h1>
+  <p class="subtitle">OpenAI gpt-image-1 で生成 → rembg で背景を自動除去</p>
+
+  <div class="card">
+    <form id="form">
+      <label for="prompt">プロンプト（日本語・英語どちらでも可）</label>
+      <textarea id="prompt" name="prompt" placeholder="例: 白いうさぎがお茶を飲んでいる、水彩画風" required></textarea>
+
+      <div class="row">
+        <div class="field">
+          <label for="size">画像サイズ</label>
+          <select id="size" name="size">
+            <option value="1024x1024">1024 × 1024</option>
+            <option value="1536x1024">1536 × 1024 (横長)</option>
+            <option value="1024x1536">1024 × 1536 (縦長)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="toggle-row">
+        <input type="checkbox" id="remove_bg" name="remove_bg" value="true" checked />
+        <label for="remove_bg" style="margin:0">背景を透過にする（rembg）</label>
+      </div>
+
+      <button type="submit" id="btn">画像を生成する</button>
+    </form>
+
+    <div class="progress" id="progress">
+      <div class="spinner"></div>
+      <p id="status-text">画像を生成中...</p>
+    </div>
+
+    <div class="error" id="error"></div>
+
+    <div class="result" id="result">
+      <h2>生成結果</h2>
+      <div class="preview-wrap">
+        <img id="preview" src="" alt="生成された画像" />
+      </div>
+      <a id="download" class="dl-btn" download="generated.png">PNG をダウンロード</a>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('form');
+    const btn = document.getElementById('btn');
+    const progress = document.getElementById('progress');
+    const statusText = document.getElementById('status-text');
+    const resultDiv = document.getElementById('result');
+    const preview = document.getElementById('preview');
+    const downloadLink = document.getElementById('download');
+    const errorDiv = document.getElementById('error');
+    const removeBgCheckbox = document.getElementById('remove_bg');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      btn.disabled = true;
+      progress.style.display = 'block';
+      resultDiv.style.display = 'none';
+      errorDiv.style.display = 'none';
+      statusText.textContent = '画像を生成中...';
+
+      const formData = new FormData(form);
+      formData.set('remove_bg', removeBgCheckbox.checked ? 'true' : 'false');
+
+      try {
+        const res = await fetch('/generate', { method: 'POST', body: formData });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'サーバーエラーが発生しました');
+        }
+
+        statusText.textContent = '背景を除去中...';
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+
+        preview.src = url;
+        downloadLink.href = url;
+        resultDiv.style.display = 'block';
+
+      } catch (err) {
+        errorDiv.textContent = 'エラー: ' + err.message;
+        errorDiv.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        progress.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
